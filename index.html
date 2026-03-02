@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4A90E2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Ankle Strength Trainer</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Header -->
+        <header id="header">
+            <button id="backBtn" class="header-btn" style="display: none;">← Back</button>
+            <h1 id="pageTitle">Dashboard</h1>
+            <button id="menuBtn" class="header-btn">☰</button>
+        </header>
+
+        <!-- Main Content -->
+        <main id="mainContent">
+            <!-- Dynamic content loads here -->
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav id="bottomNav">
+            <button class="nav-btn active" data-view="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-btn" data-view="exercises">
+                <span class="nav-icon">💪</span>
+                <span class="nav-label">Exercises</span>
+            </button>
+            <button class="nav-btn" data-view="routines">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Routines</span>
+            </button>
+            <button class="nav-btn" data-view="calendar">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">Calendar</span>
+            </button>
+            <button class="nav-btn" data-view="history">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">History</span>
+            </button>
+        </nav>
+
+        <!-- Side Menu Overlay -->
+        <div id="menuOverlay" class="overlay" style="display: none;">
+            <div class="menu-panel">
+                <h2>Settings</h2>
+                <div class="menu-item">
+                    <label for="defaultRestTime">Default Rest Timer (seconds):</label>
+                    <input type="number" id="defaultRestTime" value="30" min="10" max="300">
+                </div>
+                <div class="menu-item">
+                    <button id="resetDataBtn" class="btn-danger">Reset All Data</button>
+                </div>
+                <button id="closeMenuBtn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/exercises.js"></script>
+    <script src="js/routines.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/workout.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
