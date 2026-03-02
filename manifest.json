@@ -2,7 +2,7 @@
   "name": "Ankle Strength Trainer",
   "short_name": "AnkleStrength",
   "description": "Track and complete your ankle strengthening exercises",
-  "start_url": "/",
+  "start_url": "/ankle-strength-trainer",
   "display": "standalone",
   "background_color": "#F5F5F5",
   "theme_color": "#4A90E2",
