@@ -46,32 +46,48 @@ const RoutinesView = {
         const exercises = routine.exercises || [];
         const allExercises = DataManager.getExercises();
 
+        // Check for missing exercises
+        const validExercises = [];
+        const missingExercises = [];
+        exercises.forEach(ex => {
+            const exercise = allExercises.find(e => e.id === ex.exerciseId);
+            if (exercise) {
+                validExercises.push({ ...ex, exerciseData: exercise });
+            } else {
+                missingExercises.push(ex);
+            }
+        });
+
         const content = `
             <div class="routine-detail">
                 <h2>${routine.name}</h2>
-                ${exercises.length === 0 ? `
+                ${missingExercises.length > 0 ? `
+                    <div class="card" style="background: #ffe6e6; border-color: #ff4444;">
+                        <strong>⚠️ Warning:</strong> This routine contains ${missingExercises.length} deleted exercise(s).
+                        Please edit this routine to remove them before starting a workout.
+                    </div>
+                ` : ''}
+                ${validExercises.length === 0 ? `
                     <div class="empty-state">
                         <p>No exercises in this routine yet</p>
                     </div>
                 ` : `
                     <div class="exercise-list">
-                        ${exercises.map((ex, index) => {
-                            const exercise = allExercises.find(e => e.id === ex.exerciseId);
-                            if (!exercise) return '';
+                        ${validExercises.map((ex, index) => {
                             return `
                                 <div class="card">
-                                    <div class="card-title">${index + 1}. ${exercise.name}</div>
+                                    <div class="card-title">${index + 1}. ${ex.exerciseData.name}</div>
                                     <div class="card-meta">
                                         <span>Sets: ${ex.sets}</span>
                                         <span>Reps: ${ex.reps}</span>
                                     </div>
-                                    <div class="card-description">${exercise.description}</div>
+                                    <div class="card-description">${ex.exerciseData.description}</div>
                                 </div>
                             `;
                         }).join('')}
                     </div>
                 `}
-                <button class="btn btn-success" onclick="WorkoutView.startWorkout('${id}')">
+                <button class="btn btn-success" onclick="WorkoutView.startWorkout('${id}')" ${missingExercises.length > 0 ? 'disabled' : ''}>
                     ▶️ Start Workout
                 </button>
                 <button class="btn" onclick="RoutinesView.editRoutine('${id}')">
@@ -220,7 +236,7 @@ const RoutinesView = {
             exerciseId: id,
             sets: sets[index],
             reps: reps[index]
-        })).filter(ex => ex.exerciseId); // Remove empty rows
+        })).filter(ex => ex.exerciseId && ex.exerciseId.trim() !== ''); // Remove empty rows
 
         const routine = {
             id: formData.get('id') || undefined,
@@ -230,6 +246,17 @@ const RoutinesView = {
 
         if (exercises.length === 0) {
             alert('Please add at least one exercise to the routine');
+            return;
+        }
+
+        // Validate that all exercises exist
+        const allExercises = DataManager.getExercises();
+        const invalidExercises = exercises.filter(ex => {
+            return !allExercises.find(e => e.id === ex.exerciseId);
+        });
+
+        if (invalidExercises.length > 0) {
+            alert('One or more selected exercises do not exist. Please refresh and try again.');
             return;
         }
 

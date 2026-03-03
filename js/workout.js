@@ -15,6 +15,17 @@ const WorkoutView = {
             return;
         }
 
+        // Validate all exercises exist
+        const allExercises = DataManager.getExercises();
+        const missingExercises = routine.exercises.filter(ex => {
+            return !allExercises.find(e => e.id === ex.exerciseId);
+        });
+
+        if (missingExercises.length > 0) {
+            alert('This routine contains deleted exercises. Please edit the routine to remove them.');
+            return;
+        }
+
         this.currentWorkout = {
             routineId: routine.id,
             routineName: routine.name,
@@ -27,8 +38,19 @@ const WorkoutView = {
         this.currentSet = 1;
         this.startTime = new Date();
 
-        this.render();
+        console.log('Starting workout with routine:', routine);
+        console.log('Current workout object:', this.currentWorkout);
+
         App.navigate('workout', false);
+    },
+
+    // Helper method to update the display during workout
+    updateDisplay() {
+        const content = this.render();
+        if (content) {
+            document.getElementById('mainContent').innerHTML = content;
+            document.getElementById('pageTitle').textContent = 'Workout';
+        }
     },
 
     render() {
@@ -43,13 +65,43 @@ const WorkoutView = {
         }
 
         const currentExercise = this.currentWorkout.exercises[this.currentExerciseIndex];
+
+        // Debug: Check if currentExercise exists and has valid data
+        if (!currentExercise) {
+            alert('Error: No exercise data found at current index.');
+            this.quitWorkout();
+            return '';
+        }
+
+        if (!currentExercise.exerciseId) {
+            alert(`Error: Exercise has no ID. Exercise data: ${JSON.stringify(currentExercise)}`);
+            this.nextExercise();
+            return '';
+        }
+
         const exerciseData = DataManager.getExercise(currentExercise.exerciseId);
+
+        // Debug logging
+        console.log('Current Exercise:', currentExercise);
+        console.log('Exercise Data:', exerciseData);
+
+        // Handle missing exercise (deleted after routine was created)
+        if (!exerciseData) {
+            alert(`Exercise not found (ID: ${currentExercise.exerciseId}). It may have been deleted. Skipping to next exercise.`);
+            this.nextExercise();
+            return '';
+        }
+
+        // Ensure sets and reps have values
+        const sets = currentExercise.sets || exerciseData.sets || '3';
+        const reps = currentExercise.reps || exerciseData.reps || '10';
+
         const progress = ((this.currentExerciseIndex + 1) / this.currentWorkout.exercises.length) * 100;
 
         const content = `
             <div class="workout-view">
                 <div class="card">
-                    <div class="card-subtitle">${this.currentWorkout.routineName}</div>
+                    <div class="card-subtitle">${this.currentWorkout.routineName || 'Workout'}</div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: ${progress}%"></div>
                     </div>
@@ -59,12 +111,12 @@ const WorkoutView = {
                 </div>
 
                 <div class="card">
-                    <h2>${exerciseData.name}</h2>
+                    <h2>${exerciseData.name || 'Unknown Exercise'}</h2>
                     <div class="card-meta mb-1">
-                        <span><strong>Target:</strong> ${currentExercise.sets} sets × ${currentExercise.reps} reps</span>
+                        <span><strong>Target:</strong> ${sets} sets × ${reps} reps</span>
                     </div>
                     <div class="card-description">
-                        ${exerciseData.description}
+                        ${exerciseData.description || 'No description'}
                     </div>
                     ${exerciseData.videoUrl ? `
                         <a href="${exerciseData.videoUrl}" target="_blank" class="btn btn-outline btn-small">
@@ -74,26 +126,29 @@ const WorkoutView = {
                 </div>
 
                 <div class="card text-center">
-                    <h3>Set ${this.currentSet} of ${currentExercise.sets}</h3>
+                    <h3>Set ${this.currentSet} of ${sets}</h3>
                     ${this.isResting ? this.renderRestTimer() : this.renderWorkingState()}
                 </div>
 
                 <div class="card">
                     <h4>Sets Completed:</h4>
-                    ${this.renderCompletedSets(currentExercise)}
+                    ${this.renderCompletedSets(currentExercise, sets)}
                 </div>
 
                 ${this.renderWorkoutActions()}
             </div>
         `;
 
-        document.getElementById('mainContent').innerHTML = content;
-        document.getElementById('pageTitle').textContent = 'Workout';
-        document.getElementById('backBtn').style.display = 'block';
-        document.getElementById('backBtn').onclick = () => this.confirmQuit();
+        console.log('Generated HTML content:', content);
 
-        // Hide bottom nav during workout
-        document.getElementById('bottomNav').style.display = 'none';
+        // Set up back button and hide bottom nav
+        setTimeout(() => {
+            document.getElementById('backBtn').style.display = 'block';
+            document.getElementById('backBtn').onclick = () => this.confirmQuit();
+            document.getElementById('bottomNav').style.display = 'none';
+        }, 0);
+
+        return content;
     },
 
     renderWorkingState() {
@@ -121,8 +176,8 @@ const WorkoutView = {
         `;
     },
 
-    renderCompletedSets(exercise) {
-        const targetSets = parseInt(exercise.sets) || 3;
+    renderCompletedSets(exercise, sets) {
+        const targetSets = parseInt(sets || exercise.sets) || 3;
         const completed = exercise.completedSets.length;
 
         let html = '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">';
@@ -154,7 +209,9 @@ const WorkoutView = {
             timestamp: new Date()
         });
 
-        const targetSets = parseInt(currentExercise.sets) || 3;
+        // Get exercise data to check default sets if needed
+        const exerciseData = DataManager.getExercise(currentExercise.exerciseId);
+        const targetSets = parseInt(currentExercise.sets || (exerciseData ? exerciseData.sets : '3')) || 3;
 
         if (this.currentSet >= targetSets) {
             // Exercise complete, move to next
@@ -171,7 +228,7 @@ const WorkoutView = {
         const settings = DataManager.getSettings();
         this.timerSeconds = settings.defaultRestTime || 30;
 
-        this.render();
+        this.updateDisplay();
 
         this.timerInterval = setInterval(() => {
             this.timerSeconds--;
@@ -181,7 +238,7 @@ const WorkoutView = {
                 this.playNotification();
             } else {
                 // Update timer display
-                this.render();
+                this.updateDisplay();
             }
         }, 1000);
     },
@@ -190,7 +247,7 @@ const WorkoutView = {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
         this.isResting = false;
-        this.render();
+        this.updateDisplay();
     },
 
     skipRest() {
@@ -205,7 +262,7 @@ const WorkoutView = {
             this.completeWorkout();
         } else {
             this.isResting = false;
-            this.render();
+            this.updateDisplay();
         }
     },
 
