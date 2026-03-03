@@ -197,4 +197,3 @@ Exercises tab → Click exercise → Edit Exercise
 ## License
 
 Free to use and modify for personal use.
-# ankle-strength-trainer
